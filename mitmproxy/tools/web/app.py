@@ -132,6 +132,9 @@ class RequestHandler(tornado.web.RequestHandler):
         self.set_header("X-Frame-Options", "DENY")
         self.add_header("X-XSS-Protection", "1; mode=block")
         self.add_header("X-Content-Type-Options", "nosniff")
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
         self.add_header(
             "Content-Security-Policy",
             "default-src 'self'; "
@@ -201,6 +204,9 @@ class FilterHelp(RequestHandler):
 class WebSocketEventBroadcaster(tornado.websocket.WebSocketHandler):
     # raise an error if inherited class doesn't specify its own instance.
     connections: ClassVar[set]
+
+    def check_origin(self, origin):
+        return True
 
     def open(self):
         self.connections.add(self)
