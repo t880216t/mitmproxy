@@ -102,6 +102,94 @@ def flow_to_json(flow: mitmproxy.flow.Flow) -> dict:
 
     return f
 
+def flow_to_json_full(flow: mitmproxy.flow.Flow) -> dict:
+    """
+    Remove flow message content and cert to save transmission space.
+
+    Args:
+        flow: The original flow.
+    """
+    f = {
+        "id": flow.id,
+        "intercepted": flow.intercepted,
+        "is_replay": flow.is_replay,
+        "client_conn": flow.client_conn.get_state(),
+        "server_conn": flow.server_conn.get_state(),
+        "type": flow.type,
+        "modified": flow.modified(),
+        "marked": flow.marked,
+    }
+    # .alpn_proto_negotiated is bytes, we need to decode that.
+    for conn in "client_conn", "server_conn":
+        if f[conn]["alpn_proto_negotiated"] is None:
+            continue
+        f[conn]["alpn_proto_negotiated"] = \
+            f[conn]["alpn_proto_negotiated"].decode(errors="backslashreplace")
+    # There are some bytes in here as well, let's skip it until we have them in the UI.
+    f["client_conn"].pop("tls_extensions", None)
+    if flow.error:
+        f["error"] = flow.error.get_state()
+
+    if isinstance(flow, http.HTTPFlow):
+        content_length: Optional[int]
+        content_hash: Optional[str]
+        if flow.request:
+            if flow.request.raw_content:
+                content_length = len(flow.request.raw_content)
+                content_hash = hashlib.sha256(flow.request.raw_content).hexdigest()
+                req_content = str(flow.request.raw_content, encoding = "utf-8")
+            else:
+                content_length = None
+                content_hash = None
+                req_content = None
+            f["request"] = {
+                "method": flow.request.method,
+                "scheme": flow.request.scheme,
+                "host": flow.request.host,
+                "port": flow.request.port,
+                "path": flow.request.path,
+                "http_version": flow.request.http_version,
+                "headers": tuple(flow.request.headers.items(True)),
+                "contentLength": content_length,
+                "contentHash": content_hash,
+                "timestamp_start": flow.request.timestamp_start,
+                "timestamp_end": flow.request.timestamp_end,
+                "is_replay": flow.is_replay == "request",  # TODO: remove, use flow.is_replay instead.
+                "pretty_host": flow.request.pretty_host,
+                "req_content": req_content,
+            }
+        if flow.response:
+            if flow.response.raw_content:
+                if flow.response.headers.get("Content-Type", "").startswith("application/json"):
+                    resp_content = json.loads(str(flow.response.raw_content, encoding = "utf-8"))
+                else:
+                    resp_content = str(flow.response.raw_content, encoding="utf-8")
+                content_length = len(flow.response.raw_content)
+                content_hash = hashlib.sha256(flow.response.raw_content).hexdigest()
+            else:
+                content_length = None
+                content_hash = None
+                resp_content = None
+            f["response"] = {
+                "http_version": flow.response.http_version,
+                "status_code": flow.response.status_code,
+                "reason": flow.response.reason,
+                "headers": tuple(flow.response.headers.items(True)),
+                "contentLength": content_length,
+                "contentHash": content_hash,
+                "timestamp_start": flow.response.timestamp_start,
+                "timestamp_end": flow.response.timestamp_end,
+                "resp_content": resp_content,
+                "is_replay": flow.is_replay == "response",  # TODO: remove, use flow.is_replay instead.
+            }
+            if flow.response.data.trailers:
+                f["response"]["trailers"] = tuple(flow.response.data.trailers.items(True))
+
+    f.get("server_conn", {}).pop("cert", None)
+    f.get("client_conn", {}).pop("mitmcert", None)
+
+    return f
+
 
 def logentry_to_json(e: log.LogEntry) -> dict:
     return {
@@ -233,6 +321,17 @@ class Flows(RequestHandler):
     def get(self):
         self.write([flow_to_json(f) for f in self.view])
 
+class FlowsByIds(RequestHandler):
+    def get(self):
+        save_ids = self.json
+        fw = []
+        for f in self.view:
+            if save_ids['saveIds']:
+                if f.id in save_ids['saveIds']:
+                    fw.append(flow_to_json_full(f))
+
+        self.write(fw)
+
 
 class DumpFlows(RequestHandler):
     def get(self):
@@ -345,6 +444,23 @@ class FlowHandler(RequestHandler):
             flow.revert()
             raise
         self.view.update([flow])
+
+class FlowDumpByIdHandler(RequestHandler):
+    def get(self):
+        self.set_header("Content-Disposition", "attachment; filename=flows")
+        self.set_header("Content-Type", "application/octet-stream")
+
+        save_ids = self.json
+
+        bio = BytesIO()
+        fw = io.FlowWriter(bio)
+        for f in self.view:
+            if save_ids['saveIds']:
+                if f.id in save_ids['saveIds']:
+                    fw.add(f)
+
+        self.write(bio.getvalue())
+        bio.close()
 
 
 class DuplicateFlow(RequestHandler):
@@ -524,6 +640,8 @@ class Application(tornado.web.Application):
                 (r"/flows/dump", DumpFlows),
                 (r"/flows/resume", ResumeFlows),
                 (r"/flows/kill", KillFlows),
+                (r"/flows/dumpById", FlowDumpByIdHandler),
+                (r"/flows/jsonById", FlowsByIds),
                 (r"/flows/(?P<flow_id>[0-9a-f\-]+)", FlowHandler),
                 (r"/flows/(?P<flow_id>[0-9a-f\-]+)/resume", ResumeFlow),
                 (r"/flows/(?P<flow_id>[0-9a-f\-]+)/kill", KillFlow),
