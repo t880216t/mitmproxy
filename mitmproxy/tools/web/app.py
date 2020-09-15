@@ -134,7 +134,7 @@ class RequestHandler(tornado.web.RequestHandler):
         self.add_header("X-Content-Type-Options", "nosniff")
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, DELETE')
         self.add_header(
             "Content-Security-Policy",
             "default-src 'self'; "
