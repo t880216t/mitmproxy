@@ -103,6 +103,13 @@ def flow_to_json(flow: mitmproxy.flow.Flow) -> dict:
 
     return f
 
+def ungzip(data):
+    try:
+        data=gzip.decompress(data)
+    except:
+        pass
+    return data
+
 def flow_to_json_full(flow: mitmproxy.flow.Flow) -> dict:
     """
     Remove flow message content and cert to save transmission space.
@@ -138,12 +145,7 @@ def flow_to_json_full(flow: mitmproxy.flow.Flow) -> dict:
             if flow.request.raw_content:
                 content_length = len(flow.request.raw_content)
                 content_hash = hashlib.sha256(flow.request.raw_content).hexdigest()
-                try:
-                    buff = BytesIO(flow.request.raw_content)
-                    f = gzip.GzipFile(fileobj=buff)
-                    req_content = f.read().decode('utf-8')
-                except:
-                    req_content = flow.request.raw_content.decode('utf-8')
+                req_content = flow.request.raw_content.decode('utf-8','ignore')
             else:
                 content_length = None
                 content_hash = None
@@ -166,17 +168,14 @@ def flow_to_json_full(flow: mitmproxy.flow.Flow) -> dict:
             }
         if flow.response:
             if flow.response.raw_content:
-                if flow.response.headers.get("Content-Type", "").startswith("application/json"):
-                    resp_content = json.loads(str(flow.response.raw_content, encoding = "utf-8"))
-                else:
-                    try:
-                        buff = BytesIO(flow.response.raw_content)
-                        f = gzip.GzipFile(fileobj=buff)
-                        resp_content = f.read().decode('utf-8')
-                    except:
-                        resp_content = str(flow.response.raw_content, encoding="utf-8")
                 content_length = len(flow.response.raw_content)
                 content_hash = hashlib.sha256(flow.response.raw_content).hexdigest()
+                if flow.response.headers.get("Content-Type", "").startswith("application/json"):
+                    resp_content = json.loads(flow.response.raw_content.decode('utf-8','ignore'))
+                elif flow.response.headers.get("Accept-Encoding", "").startswith("application/json"):
+                    resp_content = ungzip(flow.response.raw_content).decode('utf-8','ignore')
+                else:
+                    resp_content = flow.response.raw_content.decode('utf-8','ignore')
             else:
                 content_length = None
                 content_hash = None
