@@ -170,9 +170,7 @@ def flow_to_json_full(flow: mitmproxy.flow.Flow) -> dict:
             if flow.response.raw_content:
                 content_length = len(flow.response.raw_content)
                 content_hash = hashlib.sha256(flow.response.raw_content).hexdigest()
-                if flow.response.headers.get("Content-Type", "").startswith("application/json"):
-                    resp_content = json.loads(flow.response.raw_content.decode('utf-8', 'ignore'))
-                elif flow.response.headers.get("Accept-Encoding", "").startswith("gzip"):
+                if flow.response.headers.get("Accept-Encoding", "").startswith("gzip"):
                     resp_content = ungzip(flow.response.raw_content).decode('utf-8', 'ignore')
                 else:
                     resp_content = flow.response.raw_content.decode('utf-8', 'ignore')
