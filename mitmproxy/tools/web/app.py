@@ -138,9 +138,12 @@ def flow_to_json_full(flow: mitmproxy.flow.Flow) -> dict:
             if flow.request.raw_content:
                 content_length = len(flow.request.raw_content)
                 content_hash = hashlib.sha256(flow.request.raw_content).hexdigest()
-                buff = BytesIO(flow.request.raw_content)
-                f = gzip.GzipFile(fileobj=buff)
-                req_content = f.read().decode('utf-8')
+                try:
+                    buff = BytesIO(flow.request.raw_content)
+                    f = gzip.GzipFile(fileobj=buff)
+                    req_content = f.read().decode('utf-8')
+                except:
+                    req_content = flow.request.raw_content.decode('utf-8')
             else:
                 content_length = None
                 content_hash = None
