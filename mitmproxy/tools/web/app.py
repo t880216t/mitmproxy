@@ -2,6 +2,7 @@ import asyncio
 import hashlib
 import json
 import logging
+import gzip
 import os.path
 import re
 from io import BytesIO
@@ -137,7 +138,9 @@ def flow_to_json_full(flow: mitmproxy.flow.Flow) -> dict:
             if flow.request.raw_content:
                 content_length = len(flow.request.raw_content)
                 content_hash = hashlib.sha256(flow.request.raw_content).hexdigest()
-                req_content = str(flow.request.raw_content, encoding = "utf-8")
+                buff = BytesIO(flow.request.raw_content)
+                f = gzip.GzipFile(fileobj=buff)
+                req_content = f.read().decode('utf-8')
             else:
                 content_length = None
                 content_hash = None
@@ -163,7 +166,12 @@ def flow_to_json_full(flow: mitmproxy.flow.Flow) -> dict:
                 if flow.response.headers.get("Content-Type", "").startswith("application/json"):
                     resp_content = json.loads(str(flow.response.raw_content, encoding = "utf-8"))
                 else:
-                    resp_content = str(flow.response.raw_content, encoding="utf-8")
+                    try:
+                        buff = BytesIO(flow.response.raw_content)
+                        f = gzip.GzipFile(fileobj=buff)
+                        resp_content = f.read().decode('utf-8')
+                    except:
+                        resp_content = str(flow.response.raw_content, encoding="utf-8")
                 content_length = len(flow.response.raw_content)
                 content_hash = hashlib.sha256(flow.response.raw_content).hexdigest()
             else:
