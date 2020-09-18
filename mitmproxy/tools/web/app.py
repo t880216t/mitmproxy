@@ -147,7 +147,7 @@ def flow_to_json_full(flow: mitmproxy.flow.Flow) -> dict:
                 content_hash = hashlib.sha256(flow.request.raw_content).hexdigest()
                 req_message = getattr(flow, 'request')
                 req_description, req_lines, req_error = contentviews.get_message_content_view(
-                    'Raw', req_message , flow
+                    'auto', req_message , flow
                 )
                 req_content = dict(
                     lines=list(req_lines),
@@ -179,7 +179,7 @@ def flow_to_json_full(flow: mitmproxy.flow.Flow) -> dict:
                 content_hash = hashlib.sha256(flow.response.raw_content).hexdigest()
                 message = getattr(flow, 'response')
                 description, lines, error = contentviews.get_message_content_view(
-                    'Raw', message, flow
+                    'auto', message, flow
                 )
                 resp_content = dict(
                     lines=list(lines),
