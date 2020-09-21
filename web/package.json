@@ -1,5 +1,5 @@
 {
-  "name": "mitmproxy",
+  "name": "replay system proxy",
   "private": true,
   "scripts": {
     "test": "jest --coverage",
