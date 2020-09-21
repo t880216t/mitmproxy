@@ -351,16 +351,6 @@ class FlowsByIds(RequestHandler):
 
         self.write(fw)
 
-    def post(self):
-        save_ids = self.json
-        fw = []
-        for f in self.view:
-            if save_ids['saveIds']:
-                if f.id in save_ids['saveIds']:
-                    fw.append(flow_to_json_full(f))
-
-        self.write(fw)
-
 
 class DumpFlows(RequestHandler):
     def get(self):
@@ -570,6 +560,17 @@ class FlowContentView(RequestHandler):
         ))
 
 
+class FlowContentDetailView(RequestHandler):
+    def get(self, flow_id):
+        fw = {}
+        for f in self.view:
+            if flow_id:
+                if f.id == flow_id:
+                    fw = flow_to_json_full(f)
+
+        self.write(fw)
+
+
 class Events(RequestHandler):
     def get(self):
         self.write([logentry_to_json(e) for e in self.master.events.data])
@@ -681,6 +682,9 @@ class Application(tornado.web.Application):
                 (
                     r"/flows/(?P<flow_id>[0-9a-f\-]+)/(?P<message>request|response)/content/(?P<content_view>[0-9a-zA-Z\-\_]+)(?:\.json)?",
                     FlowContentView),
+                (
+                    r"/flowDetail/(?P<flow_id>[0-9a-f\-]+)/(?P<message>request|response)/content/(?P<content_view>[0-9a-zA-Z\-\_]+)(?:\.json)?",
+                    FlowContentDetailView),
                 (r"/settings(?:\.json)?", Settings),
                 (r"/clear", ClearAll),
                 (r"/options(?:\.json)?", Options),
