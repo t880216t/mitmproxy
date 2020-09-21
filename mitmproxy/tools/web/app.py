@@ -682,9 +682,7 @@ class Application(tornado.web.Application):
                 (
                     r"/flows/(?P<flow_id>[0-9a-f\-]+)/(?P<message>request|response)/content/(?P<content_view>[0-9a-zA-Z\-\_]+)(?:\.json)?",
                     FlowContentView),
-                (
-                    r"/flowDetail/(?P<flow_id>[0-9a-f\-]+)/(?P<message>request|response)/content/(?P<content_view>[0-9a-zA-Z\-\_]+)(?:\.json)?",
-                    FlowContentDetailView),
+                (r"/flowDetail/(?P<flow_id>[0-9a-f\-]+)", FlowContentDetailView),
                 (r"/settings(?:\.json)?", Settings),
                 (r"/clear", ClearAll),
                 (r"/options(?:\.json)?", Options),
