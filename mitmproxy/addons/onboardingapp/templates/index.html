@@ -10,8 +10,8 @@
     {% include 'icons/' + icon + '-brands.svg' %}
     <div class="media-body">
         <h5 class="mt-0">{{ title | safe }}</h5>
-        <a class="btn btn-sm btn-success" href="/cert/{{ filetype }}" target="_blank">🔏 Get proxy-ca-cert.{{
-            filetype }}</a>
+        <a class="btn btn-sm btn-success" href="/cert/{{ filetype }}" target="_blank">🔏 安装证书（{{
+            filetype }}）</a>
         <a class="btn btn-sm btn-info show-instructions" href="#{{ title.split(' ')[0] }}" id="{{ title.split(' ')[0] }}">📖
             显示步骤</a>
         <a class="btn btn-sm btn-info hide-instructions" href="#/">📖 隐藏步骤</a>
@@ -105,8 +105,8 @@
     {% include 'icons/certificate-solid.svg' %}
     <div class="media-body">
         <h5 class="mt-0">Other Platforms</h5>
-        <a class="btn btn-sm btn-success" href="/cert/pem" target="_blank">🔏 Get proxy-ca-cert.pem</a>
-        <a class="btn btn-sm btn-success" href="/cert/p12" target="_blank">🔏 Get proxy-ca-cert.p12</a>
+        <a class="btn btn-sm btn-success" href="/cert/pem" target="_blank">🔏 下载证书（pem）</a>
+        <a class="btn btn-sm btn-success" href="/cert/p12" target="_blank">🔏 下载证书（p12）</a>
     </div>
     </li>
 </ul>

@@ -351,6 +351,16 @@ class FlowsByIds(RequestHandler):
 
         self.write(fw)
 
+    def post(self):
+        save_ids = self.json
+        fw = []
+        for f in self.view:
+            if save_ids['saveIds']:
+                if f.id in save_ids['saveIds']:
+                    fw.append(flow_to_json_full(f))
+
+        self.write(fw)
+
 
 class DumpFlows(RequestHandler):
     def get(self):
