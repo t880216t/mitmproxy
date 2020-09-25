@@ -374,6 +374,10 @@ class DumpFlows(RequestHandler):
 
 
 class ClearAll(RequestHandler):
+    def get(self):
+        self.view.clear()
+        self.master.events.clear()
+
     def post(self):
         self.view.clear()
         self.master.events.clear()
